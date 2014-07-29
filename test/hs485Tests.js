@@ -1,3 +1,4 @@
+"use strict"
 var assert = require("assert");
 var hs485 = require("../");
 var util = require("util");
@@ -21,7 +22,7 @@ describe("hs485", function() {
 
     describe("Crc16", function() {
         it('test Crc16', function() {
-            c = new hs485.Crc16();
+            var c = new hs485.Crc16();
 
            assert.equal(c.update([0xfe, 0x00, 0x98, 0x00, 0x07, 0x80, 0x00, 0x00, 0x05, 0x4E, 0x00, 0x00]), 0x8d34);
            c.init();
@@ -32,7 +33,7 @@ describe("hs485", function() {
     describe("parser", function() {
         it("test parser", function() {
             var emitterCalled = false;
-            p = hs485.parser();
+            var p = hs485.parser();
                 
             var sollFrame = { 
                 start: 254,
@@ -43,12 +44,12 @@ describe("hs485", function() {
                 data: [ 128, 0, 0, 5, 78, 0, 0 ] 
             };
 
-            emitter = function(data) {
+            var emitter = function(data) {
                 assert.deepEqual(data, sollFrame);
                 emitterCalled = true;
             }
 
-            data = [0xfe, 0x00, 0x98, 0x00, 0x07, 0x80, 0x00, 0x00, 0x05, 0x4E, 0x00, 0x00];
+            var data = [0xfe, 0x00, 0x98, 0x00, 0x07, 0x80, 0x00, 0x00, 0x05, 0x4E, 0x00, 0x00];
 
             p(emitter, data.slice(0, 7));
             p(emitter, data.slice(7));

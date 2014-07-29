@@ -1,3 +1,4 @@
+"use strict"
 hs485 = require("./hs485");
 util = require("util");
 

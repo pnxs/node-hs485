@@ -1,3 +1,4 @@
+"use strict"
 var util = require("util");
 
 var protocol = {
@@ -20,7 +21,7 @@ Crc16.prototype.update = function (data) {
     for (var i = 0; i < len; i++) {
         var ch = data[i];
         for(var bit = 0; bit < 8; bit++) {
-            flag = (this.crc & 0x8000) != 0;
+            var flag = (this.crc & 0x8000) != 0;
             this.crc <<= 1;
             if (ch & 0x80) {
                 this.crc |= 1;
@@ -60,6 +61,7 @@ function hs485parser()
     var frameStart = false;
     var addrLength = 0;
     var receiveCnt = 0;
+    var emitter = undefined;
 
     var changeState = function(newState) {
         //console.log("changeState state from " + mode + " to " + newState);
@@ -156,8 +158,9 @@ function hs485parser()
 
     }
 
-    return function(emitter, buffer) {
+    return function(_emitter, buffer) {
         //console.log("hs485parser buffer: " + buffer);
+        emitter = _emitter;
         buffer.forEach(parse);
     };
 }
