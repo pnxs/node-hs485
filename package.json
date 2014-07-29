@@ -1,0 +1,8 @@
+{
+    "name": "hs485",
+    "author": "Thomas Schätzlein <thomas.s@thomas.pnxs.de>",
+    "main": "hs485",
+    "scripts": {
+        "test": "mocha"
+    }
+}
