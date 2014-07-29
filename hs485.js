@@ -36,6 +36,10 @@ Crc16.prototype.update = function (data) {
 
     return this.crc;
 }
+
+Crc16.prototype.getHiLo = function() {
+    return [(this.crc >> 8) & 0xff, this.crc & 0xff];
+}
     
 function myAdd(a, b) {
     return a+b;
@@ -51,6 +55,7 @@ var receiveStates = {
     DONE: 6
 };
 
+
 function hs485parser()
 {
     //console.log("create hs485parser");
@@ -62,6 +67,19 @@ function hs485parser()
     var addrLength = 0;
     var receiveCnt = 0;
     var emitter = undefined;
+    var crc16 = undefined;
+
+    var startFrame = function(start) {
+        crc16 = new Crc16;
+        receiveCnt = 0;
+        if(start == protocol.START_LONG) {
+            addrLength = 4;
+        } else {
+            addrLength = 1;
+        }
+        frame.start = start;
+        crc16.update([start]);
+    }
 
     var changeState = function(newState) {
         //console.log("changeState state from " + mode + " to " + newState);
@@ -96,19 +114,17 @@ function hs485parser()
             escaped = false;
         }
 
+        if (crc16) {
+            crc16.update([b]);
+        }
         receiveCnt++;
 
         switch(mode) {
             case receiveStates.IDLE:
                 if (frameStart) {
                     //console.log("received framestart");
-                    if(frameStart == protocol.START_LONG) {
-                        addrLength = 4;
-                    } else {
-                        addrLength = 1;
-                    }
+                    startFrame(frameStart);
                     changeState(receiveStates.DST);
-                    frame.start = frameStart;
                     frame.dst_addr = 0;
                 }
                 break;
@@ -147,7 +163,14 @@ function hs485parser()
                 frame.data.push(b);
                 if (receiveCnt == frame.size) {
                     changeState(receiveStates.DONE);
-                    emitter(frame);
+                    var crc = frame.data.splice(-2);
+
+                    if (crc16.crc == 0) {
+                        emitter(frame);
+                    } else {
+                        console.log("crc fail");
+                    }
+
                 }
                 break;
             case receiveStates.DONE:
