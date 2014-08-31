@@ -77,4 +77,12 @@ describe("hs485", function() {
            assert.deepEqual(result, [0x00, 0x98, 0x00, 0x07, 0xfc, 0x7d]);
         });
     });
+
+    describe("request", function() {
+        it('create request object', function() {
+            var r = new hs485.request.Request();
+
+            assert.equal(r.state, hs485.request.states.Start);
+        });
+    });
 });
