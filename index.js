@@ -1,2 +1,2 @@
 "use strict"
-module.exports = require("./hs485");
+module.exports = require("./lib/hs485");
