@@ -68,4 +68,13 @@ describe("hs485", function() {
             assert.equal(emitterCalled, true);
         });
     });
+    
+    describe("physical", function() {
+        it('test escapeFrame', function() {
+            var testData = [0x00, 0x98, 0x00, 0x07, 0xfd];
+            var result = hs485.physical.escapeFrame(testData);
+
+           assert.deepEqual(result, [0x00, 0x98, 0x00, 0x07, 0xfc, 0x7d]);
+        });
+    });
 });
