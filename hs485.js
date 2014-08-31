@@ -1,6 +1,8 @@
 "use strict"
 var util = require("util");
 
+var physical = require("./physical");
+
 var protocol = {
     START_SHORT: 0xFE,
     START_LONG: 0xFD,
@@ -41,10 +43,6 @@ Crc16.prototype.getHiLo = function() {
     return [(this.crc >> 8) & 0xff, this.crc & 0xff];
 }
     
-function myAdd(a, b) {
-    return a+b;
-}
-
 var receiveStates = {
     IDLE: 0,
     DST: 1,
@@ -188,6 +186,23 @@ function hs485parser()
     };
 }
 
-exports.myAdd = myAdd;
+function sendIframe(frame, resultCb) {
+}
+
+function Hs485Manager() {
+}
+
+Hs485Manager.prototype.discoverModules = function(cb) {
+    // Start discover of modules
+    fakeDevicelist = [];
+    cb(fakeDevicelist);
+}
+
+Hs485Manager.prototype.getActorState = function(addr, actor, resultCb) {
+    // Retreive state from actor and call callback
+
+    resultCb(0);
+}
+
 exports.Crc16 = Crc16;
 exports.parser = hs485parser;
