@@ -12,31 +12,45 @@ describe("MockSerialPort", function() {
                 parser: hs485.parser()
             });
 
+            var opened = false;
+
             sp.on("open", function() {
-                console.log("openeded");
+                opened = true;
             });
+
+            assert.equal(true, opened, "'open' was not called");
         });
 
         it('receive data', function() {
             var sp = new hs485.mock.MockSerialPort("/dev/ttyS1", {
                 baudrate: 19200,
                 parity: 'even',
-                parser: hs485.parser()
+                //parser: hs485.parser()
             });
 
-            sp.expectWrite("abce", ['Hallo', 'Welt']);
+            sp.expectWrite("abce", [[1,2,3], [4,5,6]]);
+
+            var opened = false;
+            var timesDataCalled = 0;
+            var writeDone = false;
 
             sp.on("open", function() {
-                console.log("openeded");
+                opened = true;
 
                 sp.on("data", function(data) {
-                    console.log("data received: " + data.length);
+                    timesDataCalled++;
                 });
                 
                 sp.write("abce", function(err, results) {
-                    console.log("sp write err=" + err + " results " + results);
+                    assert.equal(err, 0);
+                    assert.equal(results, 0);
+                    writeDone = true;
                 });
             });
+
+            assert.equal(opened, true, "open was not called");
+            assert.equal(timesDataCalled, 2);
+            assert.equal(writeDone, true);
             
             assert.equal(sp.expectedWrites.length, 0, "Not all expectedWrites where received");
         });
