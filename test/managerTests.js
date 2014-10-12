@@ -29,10 +29,12 @@ describe("hs485", function() {
             // fe 00 98 00 07 80 00 00 2a 99 a7 3a
             // fe 00 98 00 07 80 ff ff ff ff 4a ee (End of discovery)
 
-            manager.discoverModules(function(devList) {
-                assert.deepEqual(devList, [1358,1513]);
-                //assert.equal(0, manager.pendingRequest);
-            });
+            manager.ready = function() {
+                manager.discoverModules(function(devList) {
+                    assert.deepEqual(devList, [1358,1513]);
+                    //assert.equal(0, manager.pendingRequest);
+                });
+            };
 
 
         });

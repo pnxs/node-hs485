@@ -28,7 +28,8 @@ describe("hs485", function() {
                 data: [ 128, 0, 0, 5, 78 ] 
             };
 
-            var emitter = function(data) {
+            var emitter = {};
+            emitter.emit = function(ev, data) {
                 assert.deepEqual(data, sollFrame);
                 emitterCalled = true;
             }
@@ -54,7 +55,8 @@ describe("hs485", function() {
                 data: [ 0x73, 0x00, 0x03, 0x01 ] 
             };
 
-            var emitter = function(data) {
+            var emitter = {};
+            emitter.emit = function(ev, data) {
                 assert.deepEqual(data, sollFrame);
                 emitterCalled = true;
             }
