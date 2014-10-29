@@ -6,7 +6,7 @@ var util = require("util");
 describe("hs485", function() {
 
     describe("manager", function() {
-        it('discover', function() {
+        it('discover', function(done) {
             var sp = new hs485.mock.MockSerialPort("/dev/ttyS1", {
                 baudrate: 19200,
                 parity: 'even',
@@ -32,10 +32,62 @@ describe("hs485", function() {
             manager.ready = function() {
                 manager.discoverModules(function(devList) {
                     assert.deepEqual(devList, [1358,1513]);
+                    done();
                     //assert.equal(0, manager.pendingRequest);
                 });
             };
 
+            manager.init();
+
+        });
+        it('iframe1', function(done) {
+            var sp = new hs485.mock.MockSerialPort("/dev/ttyS1", {
+                baudrate: 19200,
+                parity: 'even',
+                parser: hs485.parser()
+            });
+
+            var manager = new hs485.Manager("/dev/ttyS1", sp);
+
+            // example iframe communication
+            //          dstaddr  ctl srcaddr  len data  crc
+            // write fd 000005e9 98  00000000 04 5301   1f90  Request
+            // recv  fd 00000000 1e  000005e9 04 0100   b0e2  Response
+            // write fd 000005e9 79  00000000 02        70c8  ACK
+
+            // expect send fe0400aed0
+            sp.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x98,0x00,0x00,0x00,0x00,0x04,0x53,0x01,0x1f,0x90], [
+                [0xfd,0x00,0x00,0x00,0x00,0x1e,0x00,0x00,0x05,0xe9,0x04,0x01,0x00,0xb0,0xe2],
+            ]);
+            
+            sp.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x79,0x00,0x00,0x00,0x00,0x02,0x70,0xc8], [
+                [],
+            ]);
+
+            manager.ready = function() {
+                var req = new hs485.frame.IFrame;
+                req.start = hs485.protocol.START_LONG;
+                req.dst_addr = 0x5e9;
+                req.ctrlByte = 0x98;
+                req.src_addr = 0;
+                req.size = 4;
+                req.data = [0x53,0x01];
+
+                req.sendSeq = 0;
+                req.recvSeq = 0;
+                req.syncBit = 1;
+                req.lastPacket = 1;
+                req.hasSrc = true;
+
+                req.finished = function() {
+                    assert.equal(sp.expectedWrites.length, 0, "Not all expectedWrites where received");
+                    done();
+                }
+
+                manager.iframeRequest(req);
+            };
+
+            manager.init();
 
         });
     });
