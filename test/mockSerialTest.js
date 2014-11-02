@@ -1,15 +1,14 @@
 "use strict";
 var assert = require("assert");
 var hs485 = require("../");
-//var util = require("util");
+var mock = require("../lib/mock");
 
 describe("MockSerialPort", function() {
     describe("Constructor", function() {
         it('SerialPort compablity', function() {
-            var sp = new hs485.mock.MockSerialPort("/dev/ttyS1", {
+            var sp = new mock.MockSerialPort("/dev/ttyS1", {
                 baudrate: 19200,
-                parity: 'even',
-                parser: hs485.parser()
+                parity: 'even'
             });
 
             var opened = false;
@@ -22,7 +21,7 @@ describe("MockSerialPort", function() {
         });
 
         it('receive data', function() {
-            var sp = new hs485.mock.MockSerialPort("/dev/ttyS1", {
+            var sp = new mock.MockSerialPort("/dev/ttyS1", {
                 baudrate: 19200,
                 parity: 'even'
                 //parser: hs485.parser()

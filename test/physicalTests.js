@@ -1,20 +1,13 @@
 "use strict";
 var assert = require("assert");
-var hs485 = require("../");
 var physical = require("../lib/physical");
+var mock = require("../lib/mock");
 
 describe("Hs485Pci driver", function() {
-    var sp;
     var driver;
 
     beforeEach(function() {
-        sp = new hs485.mock.MockSerialPort("/dev/ttyS1", {
-            baudrate: 19200,
-            parity: 'even',
-            parser: hs485.parser()
-        });
-
-        driver = new physical.Hs485Pci("", sp);
+        driver = new physical.Hs485Pci("dummyDevice", mock.MockSerialPort);
     });
 
     it("Open event", function(done) {
@@ -26,7 +19,7 @@ describe("Hs485Pci driver", function() {
 
 
     it("Receive frame event", function(done) {
-        sp.expectWrite([0xfe, 0x04, 0x00, 0xae, 0xd0], [
+        driver.serialPort.expectWrite([0xfe, 0x04, 0x00, 0xae, 0xd0], [
             [0xfe, 0x00, 0x98, 0x00, 0x07, 0x80, 0xff, 0xff, 0xff, 0xff, 0x4a, 0xee]
         ]);
 

@@ -1,22 +1,16 @@
 "use strict";
 var assert = require("assert");
 var hs485 = require("../");
-//var util = require("util");
+var mock = require("../lib/mock");
 
 describe("hs485", function() {
 
     describe("manager", function() {
         it('discover', function(done) {
-            var sp = new hs485.mock.MockSerialPort("/dev/ttyS1", {
-                baudrate: 19200,
-                parity: 'even',
-                parser: hs485.parser()
-            });
-
-            var manager = new hs485.Manager("/dev/ttyS1", sp);
+            var manager = new hs485.Manager("/dev/ttyS1", mock.MockSerialPort);
 
             // expect send fe0400aed0
-            sp.expectWrite([0xfe, 0x04, 0x00, 0xae, 0xd0], [
+            manager.serialPort.expectWrite([0xfe, 0x04, 0x00, 0xae, 0xd0], [
                 [0xfe, 0x00, 0x98, 0x00, 0x07, 0x80, 0x00, 0x00, 0x05, 0x4e, 0x8d, 0x34],
                 [0xfe, 0x00, 0x98, 0x00, 0x07, 0x80, 0x00, 0x00, 0x05, 0xe9, 0x5c, 0x6e],
                 [0xfe, 0x00, 0x98, 0x00, 0x07, 0x80, 0xff, 0xff, 0xff, 0xff, 0x4a, 0xee]
@@ -41,13 +35,7 @@ describe("hs485", function() {
 
         });
         it('iframe1', function(done) {
-            var sp = new hs485.mock.MockSerialPort("/dev/ttyS1", {
-                baudrate: 19200,
-                parity: 'even',
-                parser: hs485.parser()
-            });
-
-            var manager = new hs485.Manager("/dev/ttyS1", sp);
+            var manager = new hs485.Manager("/dev/ttyS1", mock.MockSerialPort);
 
             // example iframe communication
             //          dstaddr  ctl srcaddr  len data  crc
@@ -56,11 +44,11 @@ describe("hs485", function() {
             // write fd 000005e9 79  00000000 02        70c8  ACK
 
             // expect send fe0400aed0
-            sp.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x98,0x00,0x00,0x00,0x00,0x04,0x53,0x01,0x1f,0x90], [
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x98,0x00,0x00,0x00,0x00,0x04,0x53,0x01,0x1f,0x90], [
                 [0xfd,0x00,0x00,0x00,0x00,0x1e,0x00,0x00,0x05,0xe9,0x04,0x01,0x00,0xb0,0xe2]
             ]);
-            
-            sp.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x79,0x00,0x00,0x00,0x00,0x02,0x70,0xc8], [
+
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x79,0x00,0x00,0x00,0x00,0x02,0x70,0xc8], [
                 []
             ]);
 
@@ -80,7 +68,7 @@ describe("hs485", function() {
                 req.hasSrc = true;
 
                 req.finished = function() {
-                    assert.equal(sp.expectedWrites.length, 0, "Not all expectedWrites where received");
+                    assert.equal(manager.serialPort.expectedWrites.length, 0, "Not all expectedWrites where received");
                     done();
                 };
 
