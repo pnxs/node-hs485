@@ -21,7 +21,6 @@ describe("Hs485Pci driver", function() {
         driver.on("open", function () {
             done();
         });
-
         driver.init();
     });
 
@@ -32,7 +31,7 @@ describe("Hs485Pci driver", function() {
         ]);
 
         driver.on("open", function () {
-            driver.send([0xfe, 0x04, 0x00, 0xae, 0xd0]);
+            driver.sendRaw([0xfe, 0x04, 0x00, 0xae, 0xd0]);
         });
 
         driver.on("frame", function (frame) {
