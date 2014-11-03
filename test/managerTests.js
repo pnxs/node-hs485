@@ -34,6 +34,7 @@ describe("hs485", function() {
             manager.init();
 
         });
+        /*
         it('iframe1', function(done) {
             var manager = new hs485.Manager("/dev/ttyS1", mock.MockSerialPort);
 
@@ -78,5 +79,6 @@ describe("hs485", function() {
             manager.init();
 
         });
+        */
     });
 });
