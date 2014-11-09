@@ -223,6 +223,55 @@ describe("hs485", function() {
             manager.init();
         });
 
+        it('GetModuleVersion', function(done) {
+            var manager = new hs485.Manager("/dev/ttyS1", mock.MockSerialPort);
+
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x18,0x00,0x00,0x00,0x00,0x03,'h',0x54,0x8e], [
+                [0xfd,0x00,0x00,0x00,0x00,0x1e,0x00,0x00,0x05,0xe9,0x04,0x01,0x00,0xb0,0xe2]
+            ]);
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x79,0x00,0x00,0x00,0x00,0x02,0x70,0xc8], [
+                []
+            ]);
+
+            manager.ready = function() {
+                manager.getModuleVersion(0x5e9, function(version) {
+                    assert.equal(version.hwType, 0x01);
+                    assert.equal(version.hwVersion, 0x00);
+                    assert.equal(version.hwName, "HS485 S");
+                    done();
+                });
+            };
+
+            manager.init();
+        });
+
+        it('GetActorState', function(done) {
+            var manager = new hs485.Manager("/dev/ttyS1", mock.MockSerialPort);
+
+            var f = new Frame();
+            f.setDestinationAddress(0);
+            f.setSourceAddress(0x5e9);
+            f.setData([1,1]);
+            console.log("Send back:" + f.serialize());
+
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x18,0x00,0x00,0x00,0x00,0x04,'S', 1,0xF0,0x52], [
+                [253,0,0,0,0,24,0,0,5,233,4,1,1,135,52]
+            ]);
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x79,0x00,0x00,0x00,0x00,0x02,0x70,0xc8], [
+                []
+            ]);
+
+            manager.ready = function() {
+                manager.getActorState(0x5e9, 1, function(actor) {
+                    assert.equal(actor.address, 0x5e9);
+                    assert.equal(actor.actorNr, 1);
+                    assert.equal(actor.state, 1);
+                    done();
+                });
+            };
+
+            manager.init();
+        });
 
     });
 });
