@@ -3,6 +3,9 @@ var assert = require("assert");
 var hs485 = require("../");
 var mock = require("../lib/mock");
 
+var Frame = hs485.frame.Frame;
+var FrameType = hs485.frame.FrameType;
+
 describe("hs485", function() {
 
     describe("manager", function() {
@@ -34,8 +37,8 @@ describe("hs485", function() {
             manager.init();
 
         });
-        /*
-        it('iframe1', function(done) {
+
+        it('IFrame request with response data', function(done) {
             var manager = new hs485.Manager("/dev/ttyS1", mock.MockSerialPort);
 
             // example iframe communication
@@ -54,31 +57,172 @@ describe("hs485", function() {
             ]);
 
             manager.ready = function() {
-                var req = new hs485.frame.IFrame;
-                req.start = hs485.protocol.START_LONG;
-                req.dst_addr = 0x5e9;
-                req.ctrlByte = 0x98;
-                req.src_addr = 0;
-                req.size = 4;
-                req.data = [0x53,0x01];
+                var req = new Frame();
 
-                req.sendSeq = 0;
-                req.recvSeq = 0;
-                req.syncBit = 1;
-                req.lastPacket = 1;
-                req.hasSrc = true;
+                req.setDestinationAddress(0x5e9);
+                req.setSourceAddress(0);
 
-                req.finished = function() {
+                req.setSendSequence(0);
+                req.setReceiveSequence(0);
+                req.setSyncBit(true);
+
+                req.setData([0x53, 0x01]);
+
+                manager.queueRequest(req, function(data) {
                     assert.equal(manager.serialPort.expectedWrites.length, 0, "Not all expectedWrites where received");
                     done();
-                };
-
-                manager.iframeRequest(req);
+                });
             };
 
             manager.init();
 
         });
-        */
+
+        it('IFrame request without response data', function(done) {
+            var manager = new hs485.Manager("/dev/ttyS1", mock.MockSerialPort);
+
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x98,0x00,0x00,0x00,0x00,0x04,0x53,0x01,0x1f,0x90], [
+                [0xfd,0x00,0x00,0x00,0x00,0x19,0x00,0x00,0x05,0xe9,0x02,0x6d,0x08]
+            ]);
+
+            manager.ready = function() {
+                var req = new Frame();
+
+                req.setDestinationAddress(0x5e9);
+                req.setSourceAddress(0);
+
+                req.setSendSequence(0);
+                req.setReceiveSequence(0);
+                req.setSyncBit(true);
+
+                req.setData([0x53, 0x01]);
+
+                manager.queueRequest(req, function(data) {
+                    assert.equal(manager.serialPort.expectedWrites.length, 0, "Not all expectedWrites where received");
+                    done();
+                });
+            };
+
+            manager.init();
+
+        });
+
+        it('IFrame request with disturbed response data', function(done) {
+            var manager = new hs485.Manager("/dev/ttyS1", mock.MockSerialPort);
+
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x98,0x00,0x00,0x00,0x00,0x04,0x53,0x01,0x1f,0x90], [
+                [0xfd,0x00,0x00,0x00,0x00,0x1e,0x00,0x00,0x05,0xe9,0x04,0x01,0x00,0xb0,0xff], // Bad CRC in first time
+                [0xfd,0x00,0x00,0x00,0x00,0x1e,0x00,0x00,0x05,0xe9,0x04,0x01,0x00,0xb0,0xe2] // Module will retry because it received no ACK from us
+            ]);
+
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x79,0x00,0x00,0x00,0x00,0x02,0x70,0xc8], [
+                []
+            ]);
+
+            manager.ready = function() {
+                var req = new Frame();
+
+                req.setDestinationAddress(0x5e9);
+                req.setSourceAddress(0);
+
+                req.setSendSequence(0);
+                req.setReceiveSequence(0);
+                req.setSyncBit(true);
+
+                req.setData([0x53, 0x01]);
+
+                manager.queueRequest(req, function(data) {
+                    assert.equal(manager.serialPort.expectedWrites.length, 0, "Not all expectedWrites where received");
+                    done();
+                });
+            };
+
+            manager.init();
+
+        });
+
+        it('IFrame request with disturbed request data', function(done) {
+            var manager = new hs485.Manager("/dev/ttyS1", mock.MockSerialPort);
+
+            // This first request is not answered, we simulate a bad transfer from us to the destination module
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x18,0x00,0x00,0x00,0x00,0x04,0x53,0x01,0x3c,0x9e], [
+                []
+            ]);
+
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x18,0x00,0x00,0x00,0x00,0x04,0x53,0x01,0x3c,0x9e], [
+                [0xfd,0x00,0x00,0x00,0x00,0x1e,0x00,0x00,0x05,0xe9,0x04,0x01,0x00,0xb0,0xe2]
+            ]);
+
+
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x79,0x00,0x00,0x00,0x00,0x02,0x70,0xc8], [
+                []
+            ]);
+
+            manager.ready = function() {
+                var req = new Frame();
+
+                req.setDestinationAddress(0x5e9);
+                req.setSourceAddress(0);
+
+                req.setSendSequence(0);
+                req.setReceiveSequence(0);
+                req.setSyncBit(false);
+
+                req.setData([0x53, 0x01]);
+
+                manager.queueRequest(req, function(data) {
+                    assert.equal(manager.serialPort.expectedWrites.length, 0, "Not all expectedWrites where received");
+                    done();
+                });
+            };
+
+            manager.init();
+
+        });
+
+        it('Two IFrame requests', function(done) {
+            var manager = new hs485.Manager("/dev/ttyS1", mock.MockSerialPort);
+
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x18,0x00,0x00,0x00,0x00,0x04,0x53,0x01,0x3c,0x9e], [
+                [0xfd,0x00,0x00,0x00,0x00,0x1e,0x00,0x00,0x05,0xe9,0x04,0x01,0x00,0xb0,0xe2]
+            ]);
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x79,0x00,0x00,0x00,0x00,0x02,0x70,0xc8], [
+                []
+            ]);
+
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x18,0x00,0x00,0x00,0x00,0x04,0x53,0x01,0x3c,0x9e], [
+                [0xfd,0x00,0x00,0x00,0x00,0x1e,0x00,0x00,0x05,0xe9,0x04,0x01,0x00,0xb0,0xe2]
+            ]);
+            manager.serialPort.expectWrite([0xfd,0x00,0x00,0x05,0xe9,0x79,0x00,0x00,0x00,0x00,0x02,0x70,0xc8], [
+                []
+            ]);
+
+            manager.ready = function() {
+                var req = new Frame();
+
+                req.setDestinationAddress(0x5e9);
+                req.setSourceAddress(0);
+
+                req.setSendSequence(0);
+                req.setReceiveSequence(0);
+                req.setSyncBit(false);
+
+                req.setData([0x53, 0x01]);
+
+                manager.queueRequest(req, function(data) {
+                    //console.log("received first iframe callback");
+                });
+
+                manager.queueRequest(req, function(data) {
+                    //console.log("received second iframe callback");
+                    assert.equal(manager.serialPort.expectedWrites.length, 0, "Not all expectedWrites where received");
+                    done();
+                });
+            };
+
+            manager.init();
+        });
+
+
     });
 });
